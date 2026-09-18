@@ -2,8 +2,11 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
-const dbPath = path.resolve(__dirname, 'dojo.db');
+const dbPath = process.env.VERCEL
+  ? path.resolve('/tmp', 'dojo.db')
+  : path.resolve(__dirname, 'dojo.db');
 const db = new sqlite3.Database(dbPath);
+
 
 const BELT_RANKS = [
   'White',

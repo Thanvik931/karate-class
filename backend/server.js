@@ -895,6 +895,11 @@ app.get('*', (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Ultimate Dojo ERP Backend running on http://localhost:${PORT}`);
-});
+module.exports = app;
+
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Ultimate Dojo ERP Backend running on http://localhost:${PORT}`);
+  });
+}
+
