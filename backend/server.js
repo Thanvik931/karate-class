@@ -67,7 +67,117 @@ function requireRole(...roles) {
   };
 }
 
+const ADMIN_SECURITY_PIN = process.env.ADMIN_SECURITY_PIN || 'DOJO2026';
+
 // --- AUTH ROUTES ---
+
+// Public Registration / Self-Signup Route with Admin Security Verification
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const {
+      name,
+      username,
+      password,
+      role = 'student',
+      phone,
+      admin_security_pin,
+      age,
+      batch,
+      guardian_name,
+      guardian_phone,
+      guardian_relation
+    } = req.body;
+
+    if (!name || !username || !password) {
+      return res.status(400).json({ error: 'Name, Username/Code, and Password are required' });
+    }
+
+    // SECURITY CHECK: Admin or Instructor Registration requires valid Master Admin Security PIN
+    if (role === 'admin' || role === 'instructor') {
+      if (!admin_security_pin || admin_security_pin.trim() !== ADMIN_SECURITY_PIN) {
+        return res.status(403).json({
+          error: 'Security Authorization Failed: Invalid Master Admin Security PIN. Cannot grant Admin/Instructor access.'
+        });
+      }
+    }
+
+    // Check if username already exists
+    const existing = await getQuery(`SELECT id FROM users WHERE username = ?`, [username.trim()]);
+    if (existing) {
+      return res.status(400).json({ error: 'Username or Login ID already registered. Please choose another or sign in.' });
+    }
+
+    const password_hash = await bcrypt.hash(password, 10);
+
+    // Create user account
+    const userRes = await runQuery(
+      `INSERT INTO users (username, password_hash, role, name, phone) VALUES (?, ?, ?, ?, ?)`,
+      [username.trim(), password_hash, role, name.trim(), phone || '']
+    );
+
+    const userId = userRes.lastID;
+    let studentDetails = null;
+
+    // If registering as a student, create student profile & linked parent user
+    if (role === 'student') {
+      const dojo = await getQuery(`SELECT max_capacity FROM dojo_info LIMIT 1`);
+      const countRow = await getQuery(`SELECT COUNT(*) as count FROM students WHERE status = 'active'`);
+      if (countRow.count >= dojo.max_capacity) {
+        return res.status(400).json({ error: `Dojo capacity limit reached (${dojo.max_capacity} students max).` });
+      }
+
+      const parentCode = `PAR_${username.trim()}`;
+      const parentHash = await bcrypt.hash(`par123`, 10);
+      const parentRes = await runQuery(
+        `INSERT INTO users (username, password_hash, role, name, phone) VALUES (?, ?, ?, ?, ?)`,
+        [parentCode, parentHash, 'parent', guardian_name || `Parent of ${name}`, guardian_phone || phone || '']
+      );
+
+      const today = new Date().toISOString().split('T')[0];
+      const stuRes = await runQuery(
+        `INSERT INTO students 
+        (student_code, user_id, parent_user_id, name, age, contact, belt_rank, batch, join_date, guardian_name, guardian_phone, guardian_relation)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          username.trim().toUpperCase(),
+          userId,
+          parentRes.lastID,
+          name.trim(),
+          age ? parseInt(age) : 12,
+          phone || '9999999999',
+          'White',
+          batch || BATCHES[0],
+          today,
+          guardian_name || 'Parent/Guardian',
+          guardian_phone || phone || '9999999999',
+          guardian_relation || 'Parent'
+        ]
+      );
+
+      studentDetails = await getQuery(`SELECT * FROM students WHERE id = ?`, [stuRes.lastID]);
+    }
+
+    const tokenPayload = { id: userId, username: username.trim(), role, name: name.trim() };
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' });
+
+    res.status(201).json({
+      message: 'Account registered successfully!',
+      token,
+      user: {
+        id: userId,
+        username: username.trim(),
+        role,
+        name: name.trim(),
+        phone,
+        studentDetails
+      }
+    });
+  } catch (err) {
+    console.error('Registration error:', err);
+    res.status(500).json({ error: 'Failed to register account' });
+  }
+});
+
 
 app.post('/api/auth/login', async (req, res) => {
   try {
