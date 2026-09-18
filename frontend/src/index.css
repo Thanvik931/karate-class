@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .belt-white {
+    @apply bg-slate-100 text-slate-800 border border-slate-300;
+  }
+  .belt-yellow {
+    @apply bg-yellow-400 text-yellow-950 font-semibold;
+  }
+  .belt-orange {
+    @apply bg-orange-500 text-white font-semibold;
+  }
+  .belt-green {
+    @apply bg-emerald-600 text-white font-semibold;
+  }
+  .belt-purple {
+    @apply bg-purple-600 text-white font-semibold;
+  }
+  .belt-blue {
+    @apply bg-blue-600 text-white font-semibold;
+  }
+  .belt-brown-iii, .belt-brown-ii, .belt-brown-i, .belt-brown {
+    @apply bg-amber-800 text-white font-semibold;
+  }
+  .belt-black {
+    @apply bg-neutral-900 text-gold-400 text-yellow-400 font-bold border border-yellow-500;
+  }
+}
