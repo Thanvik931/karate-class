@@ -273,6 +273,16 @@ async function initDatabase() {
       )
     `);
 
+    // Performance Indices for Stress Resilience under Load
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`);
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_students_status ON students(status)`);
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_students_user_id ON students(user_id)`);
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_students_parent_user_id ON students(parent_user_id)`);
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_attendance_date_batch ON attendance(date, batch)`);
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_fees_student ON fees(student_id)`);
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_syllabus_belt ON syllabus_items(belt_rank)`);
+
+
     // Insert default Dojo Info if missing
     const dojo = await getQuery(`SELECT * FROM dojo_info LIMIT 1`);
     if (!dojo) {

@@ -122,14 +122,27 @@ export default function StudentModal({ isOpen, onClose, onSave, student = null, 
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = `Ultimate Dojo Credentials:\nStudent ID: ${createdCredentials.student.username} / Pass: ${createdCredentials.student.password}\nParent ID: ${createdCredentials.parent.username} / Pass: ${createdCredentials.parent.password}`;
+                    navigator.clipboard.writeText(text);
+                    alert('Credentials copied to clipboard!');
+                  }}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Copy className="w-4 h-4 text-yellow-400" /> Copy Credentials
+                </button>
+
                 <button
                   onClick={onClose}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-colors cursor-pointer"
+                  className="px-5 py-2 font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-colors cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white"
                 >
                   Done & Close
                 </button>
               </div>
+
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
